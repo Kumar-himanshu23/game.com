@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catch the Ball Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(45deg, #2f2ff1, #d45f5f, white, #2f2ff1, #d45f5f);
+            background-size: 400% 400%;
+            animation: gradientAnimation 10s ease infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #game-container {
+            position: relative;
+            width: 90vw;
+            height: 80vh; 
+            max-width: 500px;
+            max-height: 700px;
+            background-color: #007bff;
+            border: 3px solid #333;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        #basket {
+            position: absolute;
+            bottom: 10px;
+            width: 25%; 
+            height: 20px;
+            background-color: #333;
+            border-radius: 5px;
+            left: 50%; 
+            transform: translateX(-50%);
+        }
+
+        .ball {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #ff6347;
+            border-radius: 50%;
+        }
+
+        .special-ball {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .green-ball {
+            background-color: #28a745;
+        }
+
+        .blue-ball {
+            background-color: #007bff;
+        }
+
+        .red-ball {
+            background-color: #dc3545; 
+        }
+
+        #score-board {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 18px;
+            color: white;
+        }
+
+        #lives-board {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 18px;
+            color: white;
+        }
+
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 30px;
+            display: none;
+            text-align: center;
+        }
+
+        #restart-btn, #pause-btn {
+            display: block;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-top: 15px;
+            border: none; 
+            outline: none;
+        }
+
+        #pause-btn {
+            background-color: #ff9800;
+        }
+
+        #level-select {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        #level-select select {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+
+        .touch-controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .touch-controls button {
+            padding: 10px;
+            margin: 0 5px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .touch-controls button:hover {
+            background-color: #0056b3;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="level-select">
+        <label for="difficulty-level">Select Difficulty Level:</label>
+        <select id="difficulty-level">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+    </div>
+
+    <div id="game-container">
+        <div id="score-board">Score: 0</div>
+        <div id="lives-board">Lives: ❤️❤️❤️❤️❤️</div>
+        <div id="game-over">
+            Game Over<br>
+            <span id="final-score">Your Score: 0</span><br>
+            <button id="restart-btn">Restart</button>
+        </div>
+        <div id="basket"></div>
+    </div>
+
+    <div class="touch-controls">
+        <button id="left-btn">⬅️</button>
+        <button id="right-btn">➡️</button>
+    </div>
+
+    <button id="pause-btn">Pause</button>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const basket = document.getElementById('basket');
+        const scoreBoard = document.getElementById('score-board');
+        const livesBoard = document.getElementById('lives-board');
+        const gameOverText = document.getElementById('game-over');
+        const finalScoreText = document.getElementById('final-score');
+        const restartBtn = document.getElementById('restart-btn');
+        const difficultyLevel = document.getElementById('difficulty-level');
+        const leftBtn = document.getElementById('left-btn');
+        const rightBtn = document.getElementById('right-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+
+        let score = 0;
+        let lives = 5;
+        let gameInterval;
+        let isPaused = false;
+        let fallingSpeed = 2;
+        let ballCreationInterval;
+        let ballSpeedIncrement = 0.1; 
+
+        
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'ArrowLeft' && basket.offsetLeft > 0) {
+                basket.style.left = basket.offsetLeft - 20 + 'px';
+            }
+            if (event.key === 'ArrowRight' && basket.offsetLeft + basket.offsetWidth < gameContainer.offsetWidth) {
+                basket.style.left = basket.offsetLeft + 20 + 'px';
+            }
+            if (event.key === ' ') { 
+                togglePause();
+            }
+        });
+
+       
+        leftBtn.addEventListener('click', () => {
+            if (basket.offsetLeft > 0) {
+                basket.style.left = basket.offsetLeft - 20 + 'px';
+            }
+        });
+
+        rightBtn.addEventListener('click', () => {
+            if (basket.offsetLeft + basket.offsetWidth < gameContainer.offsetWidth) {
+                basket.style.left = basket.offsetLeft + 20 + 'px';
+            }
+        });
+
+        
+        function createBall() {
+            const ball = document.createElement('div');
+            const random = Math.random();
+
+            if (random < 0.1) {
+                ball.classList.add('special-ball', 'green-ball');
+                ball.dataset.type = 'green';
+            } else if (random < 0.2) { 
+                ball.classList.add('special-ball', 'blue-ball');
+                ball.dataset.type = 'blue';
+            } else if (random < 0.3) { 
+                ball.classList.add('special-ball', 'red-ball');
+                ball.dataset.type = 'red';
+            } else {
+                ball.classList.add('ball');
+            }
+
+           
+            ball.style.left = Math.random() * (gameContainer.offsetWidth - 30) + 'px'; 
+            ball.style.top = '0px';
+            gameContainer.appendChild(ball);
+            return ball;
+        }
+
+        
+        function updateBalls() {
+            if (isPaused) return;
+
+            const balls = document.querySelectorAll('.ball, .special-ball');
+            balls.forEach(ball => {
+                const ballTop = ball.offsetTop;
+                if (ballTop + ball.offsetHeight >= gameContainer.offsetHeight) {
+                    handleBallMiss(ball); 
+                } else {
+                    ball.style.top = ballTop + fallingSpeed + 'px';
+
+                   
+                    if (checkCollision(basket, ball)) {
+                        handleBallCollision(ball); 
+                    }
+                }
+            });
+        }
+
+        
+        function handleBallMiss(ball) {
+            gameContainer.removeChild(ball);
+            lives--;
+            updateLives();
+            if (lives === 0) {
+                endGame();
+            }
+        }
+
+      
+        function updateLives() {
+            livesBoard.innerText = `Lives: ${'❤️'.repeat(lives)}`;
+        }
+
+      
+        function handleBallCollision(ball) {
+            if (ball.classList.contains('green-ball')) {
+                basket.style.width = '35%'; 
+                setTimeout(() => {
+                    basket.style.width = '25%'; 
+                }, 5000);
+            } else if (ball.classList.contains('blue-ball')) {
+                score += 5;
+            } else if (ball.classList.contains('red-ball')) {
+                score = Math.max(0, score - 2); 
+            } else {
+                score++;
+            }
+            scoreBoard.innerText = `Score: ${score}`;
+            gameContainer.removeChild(ball);
+        }
+
+        
+        function checkCollision(basket, ball) {
+            const basketRect = basket.getBoundingClientRect();
+            const ballRect = ball.getBoundingClientRect();
+
+            return (
+                ballRect.top + ballRect.height >= basketRect.top &&
+                ballRect.left + ballRect.width >= basketRect.left &&
+                ballRect.left <= basketRect.left + basketRect.width
+            );
+        }
+
+        
+        function startGame() {
+            basket.style.left = '50%'; 
+            basket.style.transform = 'translateX(-50%)'; 
+            score = 0;
+            lives = 5;
+            scoreBoard.innerText = `Score: ${score}`;
+            updateLives();
+            gameOverText.style.display = 'none';
+            isPaused = false;
+            pauseBtn.innerText = 'Pause';
+
+            const selectedLevel = difficultyLevel.value;
+            setFallingSpeed(selectedLevel);
+
+            gameInterval = setInterval(updateBalls, 30);
+            ballCreationInterval = setInterval(() => {
+                if (!isPaused) {
+                    createBall();
+                    fallingSpeed += ballSpeedIncrement; 
+                }
+            }, 1000); 
+        }
+
+        
+        function setFallingSpeed(level) {
+            switch (level) {
+                case 'easy':
+                    fallingSpeed = 3;
+                    break;
+                case 'medium':
+                    fallingSpeed = 6;
+                    break;
+                case 'hard':
+                    fallingSpeed = 9;
+                    break;
+                default:
+                    fallingSpeed = 3;
+            }
+        }
+
+       
+        function endGame() {
+            clearInterval(gameInterval);
+            clearInterval(ballCreationInterval);
+            document.querySelectorAll('.ball, .special-ball').forEach(ball => ball.remove());
+            finalScoreText.innerText = `Your Score: ${score}`;
+            gameOverText.style.display = 'block';
+        }
+
+        
+        restartBtn.addEventListener('click', () => {
+            startGame();
+        });
+
+        
+        pauseBtn.addEventListener('click', togglePause);
+
+        function togglePause() {
+            if (isPaused) {
+                isPaused = false;
+                pauseBtn.innerText = 'Pause';
+            } else {
+                isPaused = true;
+                pauseBtn.innerText = 'Resume';
+            }
+        }
+
+       
+        startGame();
+    </script>
+</body>
+</html>
