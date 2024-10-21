@@ -33,7 +33,7 @@
         #game-container {
             position: relative;
             width: 90vw;
-            height: 80vh; 
+            height: 70vh; 
             max-width: 500px;
             max-height: 700px;
             background-color: #007bff;
@@ -80,20 +80,19 @@
             background-color: #dc3545; 
         }
 
-        #score-board {
+        #score-board, #lives-board {
             position: absolute;
             top: 10px;
-            left: 10px;
             font-size: 18px;
             color: white;
         }
 
+        #score-board {
+            left: 10px;
+        }
+
         #lives-board {
-            position: absolute;
-            top: 10px;
             right: 10px;
-            font-size: 18px;
-            color: white;
         }
 
         #game-over {
@@ -142,18 +141,52 @@
         }
 
         .touch-controls button {
-            padding: 10px;
-            margin: 0 5px;
-            font-size: 16px;
+            padding: 15px; /* Increased padding for larger tap area */
+            margin: 0 10px;
+            font-size: 24px; /* Larger font size for better visibility */
             background-color: #007bff;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            min-width: 80px; /* Set a minimum width for buttons */
         }
 
         .touch-controls button:hover {
             background-color: #0056b3;
+        }
+
+        /* Media Queries for Responsive Design */
+        @media (max-width: 768px) {
+            #game-container {
+                height: 60vh; /* Adjust height for smaller screens */
+            }
+
+            #score-board, #lives-board {
+                font-size: 16px; /* Smaller font for scores */
+            }
+
+            #game-over {
+                font-size: 24px; /* Smaller game over font size */
+            }
+
+            #restart-btn, #pause-btn {
+                font-size: 14px; /* Smaller button text */
+            }
+
+            .touch-controls button {
+                font-size: 20px; /* Smaller button text for mobile */
+            }
+        }
+
+        @media (max-width: 480px) {
+            #basket {
+                height: 15px; /* Reduce basket height */
+            }
+
+            #level-select select {
+                font-size: 14px; /* Smaller font for level selection */
+            }
         }
 
     </style>
@@ -208,7 +241,6 @@
         let ballCreationInterval;
         let ballSpeedIncrement = 0.1; 
 
-        
         document.addEventListener('keydown', function (event) {
             if (event.key === 'ArrowLeft' && basket.offsetLeft > 0) {
                 basket.style.left = basket.offsetLeft - 20 + 'px';
@@ -221,7 +253,6 @@
             }
         });
 
-       
         leftBtn.addEventListener('click', () => {
             if (basket.offsetLeft > 0) {
                 basket.style.left = basket.offsetLeft - 20 + 'px';
@@ -234,7 +265,6 @@
             }
         });
 
-        
         function createBall() {
             const ball = document.createElement('div');
             const random = Math.random();
@@ -252,14 +282,12 @@
                 ball.classList.add('ball');
             }
 
-           
             ball.style.left = Math.random() * (gameContainer.offsetWidth - 30) + 'px'; 
             ball.style.top = '0px';
             gameContainer.appendChild(ball);
             return ball;
         }
 
-        
         function updateBalls() {
             if (isPaused) return;
 
@@ -271,7 +299,6 @@
                 } else {
                     ball.style.top = ballTop + fallingSpeed + 'px';
 
-                   
                     if (checkCollision(basket, ball)) {
                         handleBallCollision(ball); 
                     }
@@ -279,7 +306,6 @@
             });
         }
 
-        
         function handleBallMiss(ball) {
             gameContainer.removeChild(ball);
             lives--;
@@ -289,12 +315,10 @@
             }
         }
 
-      
         function updateLives() {
             livesBoard.innerText = `Lives: ${'❤️'.repeat(lives)}`;
         }
 
-      
         function handleBallCollision(ball) {
             if (ball.classList.contains('green-ball')) {
                 basket.style.width = '35%'; 
@@ -312,7 +336,6 @@
             gameContainer.removeChild(ball);
         }
 
-        
         function checkCollision(basket, ball) {
             const basketRect = basket.getBoundingClientRect();
             const ballRect = ball.getBoundingClientRect();
@@ -324,7 +347,6 @@
             );
         }
 
-        
         function startGame() {
             basket.style.left = '50%'; 
             basket.style.transform = 'translateX(-50%)'; 
@@ -348,7 +370,6 @@
             }, 1000); 
         }
 
-        
         function setFallingSpeed(level) {
             switch (level) {
                 case 'easy':
@@ -365,7 +386,6 @@
             }
         }
 
-       
         function endGame() {
             clearInterval(gameInterval);
             clearInterval(ballCreationInterval);
@@ -374,12 +394,10 @@
             gameOverText.style.display = 'block';
         }
 
-        
         restartBtn.addEventListener('click', () => {
             startGame();
         });
 
-        
         pauseBtn.addEventListener('click', togglePause);
 
         function togglePause() {
@@ -392,7 +410,6 @@
             }
         }
 
-       
         startGame();
     </script>
 </body>
